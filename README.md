@@ -13,12 +13,15 @@ El protocolo ZKP utilizado se basa en el esquema de Schnorr, donde:
 - Autenticación segura sin transmisión de contraseñas
 - Implementación del protocolo Schnorr ZKP
 - API REST para registro y autenticación
+- Documentación interactiva con Swagger UI
 - Endpoints de prueba con grupo matemático pequeño para testing
+- Cliente Python interactivo (REPL)
 
 ## Requisitos previos
 
 - Java 17 o superior
 - Gradle (incluido wrapper)
+- Python 3 con `requests` (para el cliente Python)
 
 ## Pasos para ejecutar la aplicación
 
@@ -42,6 +45,41 @@ cd ZKPLoginDemo
 ```
 
 La aplicación se iniciará en `http://localhost:8080`
+
+### 4. Acceder a la documentación Swagger
+
+Una vez iniciada la aplicación, puedes acceder a la documentación interactiva de la API en:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+## Cliente Python (REPL)
+
+Se incluye un cliente interactivo en Python para probar la autenticación ZKP.
+
+### Instalación de dependencias
+
+```bash
+pip install requests
+```
+
+### Ejecución
+
+```bash
+python src/resources/consumer.py
+```
+
+### Comandos disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `register` | Registrar un nuevo usuario |
+| `login` | Autenticarse con un usuario existente |
+| `login --f` | Intentar login con fallo forzado (para testing) |
+| `privacy true/false` | Activar/desactivar modo privacidad (ocultar secretos) |
+| `setTest true/false` | Cambiar entre endpoints de producción y test |
+| `quit` | Salir del programa |
 
 ## Flujo de autenticación ZKP
 
@@ -73,6 +111,21 @@ http://localhost:8080/auth
 
 ---
 
+### GET `/auth/vars`
+
+Obtiene los parámetros criptográficos del grupo utilizado.
+
+**Response:**
+```json
+{
+  "primeModulusP": "16404534621550038323",
+  "subgroupOrderQ": "8202267310775019161",
+  "generatorG": "4"
+}
+```
+
+---
+
 ### POST `/auth/register`
 
 Registra un nuevo usuario con su verificador público.
@@ -81,14 +134,14 @@ Registra un nuevo usuario con su verificador público.
 ```json
 {
   "username": "string",
-  "vHex": "string"
+  "verifierHex": "string"
 }
 ```
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `username` | string | Nombre de usuario a registrar |
-| `vHex` | string | Verificador público `v = g^x mod p` en formato hexadecimal |
+| `verifierHex` | string | Verificador público `v = g^x mod p` en formato hexadecimal |
 
 **Response:**
 ```json
@@ -108,14 +161,14 @@ Inicia el proceso de autenticación. El servidor devuelve un challenge aleatorio
 ```json
 {
   "username": "string",
-  "tHex": "string"
+  "commitmentHex": "string"
 }
 ```
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `username` | string | Nombre de usuario |
-| `tHex` | string | Commitment `t = g^r mod p` en formato hexadecimal |
+| `commitmentHex` | string | Commitment `t = g^r mod p` en formato hexadecimal |
 
 **Response:**
 ```json
@@ -138,16 +191,16 @@ Completa el proceso de autenticación enviando la respuesta al challenge.
 ```json
 {
   "username": "string",
-  "sHex": "string",
-  "tHex": "string"
+  "responseHex": "string",
+  "commitmentHex": "string"
 }
 ```
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `username` | string | Nombre de usuario |
-| `sHex` | string | Respuesta `s = r + c * x mod q` en formato hexadecimal |
-| `tHex` | string | Commitment original (para referencia) |
+| `responseHex` | string | Respuesta `s = r + c * x mod q` en formato hexadecimal |
+| `commitmentHex` | string | Commitment original (para referencia) |
 
 **Response:**
 ```json
@@ -167,9 +220,24 @@ o en caso de fallo:
 
 ---
 
-## Endpoints de prueba
+## Endpoints de prueba (ocultos en Swagger)
 
-Los siguientes endpoints utilizan un grupo matemático pequeño (p=23) y un challenge fijo (c=5) para facilitar las pruebas y debugging.
+Los siguientes endpoints utilizan un grupo matemático pequeño (p=23, q=11, g=2) y un challenge fijo (c=5) para facilitar las pruebas y debugging.
+
+### GET `/auth/test/vars`
+
+Obtiene los parámetros del grupo de prueba.
+
+**Response:**
+```json
+{
+  "primeModulusP": "23",
+  "subgroupOrderQ": "11",
+  "generatorG": "2"
+}
+```
+
+---
 
 ### POST `/auth/test/start`
 
@@ -179,7 +247,7 @@ Igual que `/auth/start` pero con challenge fijo.
 ```json
 {
   "username": "string",
-  "tHex": "string"
+  "commitmentHex": "string"
 }
 ```
 
@@ -200,8 +268,8 @@ Igual que `/auth/finish` pero usando el grupo pequeño para verificación.
 ```json
 {
   "username": "string",
-  "sHex": "string",
-  "tHex": "string"
+  "responseHex": "string",
+  "commitmentHex": "string"
 }
 ```
 
@@ -217,43 +285,48 @@ Igual que `/auth/finish` pero usando el grupo pequeño para verificación.
 
 ## Ejemplo de uso con cURL
 
+### Obtener parámetros criptográficos
+```bash
+curl http://localhost:8080/auth/vars
+```
+
 ### Registrar usuario
 ```bash
 curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice", "vHex": "a1b2c3d4"}'
+  -d '{"username": "alice", "verifierHex": "a1b2c3d4"}'
 ```
 
 ### Iniciar autenticación
 ```bash
 curl -X POST http://localhost:8080/auth/start \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice", "tHex": "e5f6a7b8"}'
+  -d '{"username": "alice", "commitmentHex": "e5f6a7b8"}'
 ```
 
 ### Completar autenticación
 ```bash
 curl -X POST http://localhost:8080/auth/finish \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice", "sHex": "9c8d7e6f", "tHex": "e5f6a7b8"}'
+  -d '{"username": "alice", "responseHex": "9c8d7e6f", "commitmentHex": "e5f6a7b8"}'
 ```
 
 ## Parámetros criptográficos
 
 ### Grupo productivo (SmallGroup)
-- `p`: Primo de aproximadamente 423 bits  
-  `13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084171`
-- `q`: Orden del subgrupo cíclico (en hexadecimal)  
-  `FFFFFFFFFFFFFFFFFFFFFFFF99DEF836146BC9B1B4D22831`
-- `g`: Generador del grupo = 5
+- `primeModulusP`: `16404534621550038323`
+- `subgroupOrderQ`: `8202267310775019161`
+- `generatorG`: `4`
 
 ### Grupo de prueba (MockedSmallGroup)
-- `p`: 23 (primo pequeño para testing)
-- `q`: 22 (orden del grupo multiplicativo mod 23)
-- `g`: 5 (generador)
+- `primeModulusP`: `23`
+- `subgroupOrderQ`: `11`
+- `generatorG`: `2`
 
 ## Tecnologías utilizadas
 
 - **Kotlin** - Lenguaje de programación
 - **Spring Boot 3.2.2** - Framework web
+- **SpringDoc OpenAPI 2.5.0** - Documentación Swagger
 - **Gradle** - Gestión de dependencias y build
+- **Python** - Cliente REPL
