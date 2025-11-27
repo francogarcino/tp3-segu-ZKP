@@ -2,6 +2,7 @@ package com.example.zkp
 
 import com.example.zkp.groups.MockedSmallGroup
 import com.example.zkp.groups.SmallGroup
+import io.swagger.v3.oas.annotations.Hidden
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 import java.math.BigInteger
@@ -75,6 +76,7 @@ class LoginController {
 
     // -----------------------------
     // TEST (grupo chico)
+    @Hidden
     @GetMapping("/test/vars")
     fun getMockedVars(): Map<String, String> {
         return mapOf(
@@ -84,6 +86,7 @@ class LoginController {
         )
     }
 
+    @Hidden
     @PostMapping("/test/start")
     fun mockedStartAuth(@RequestBody req: StartAuthRequest): StartAuthResponse {
         if (!users.containsKey(req.username)) {
@@ -100,6 +103,7 @@ class LoginController {
         return StartAuthResponse(c.toString(16))
     }
 
+    @Hidden
     @PostMapping("/test/finish")
     fun mockedFinishAuth(@RequestBody req: FinishAuthRequest): GenericResponse {
         val v = users[req.username] ?: return GenericResponse(false, "Unknown user")
