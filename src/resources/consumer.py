@@ -7,8 +7,8 @@ BASE_URL = "http://localhost:8080/auth"
 BASE_URL_TEST = "http://localhost:8080/auth/test"
 ACTIVE_URL = BASE_URL
 
-# --- NEW: Privacy mode ---
-PRIVACY_MODE = True   # default: hide secrets
+PRIVACY_MODE = True
+DEBUG_MODE = False
 
 
 def read_secret(prompt: str) -> int:
@@ -64,7 +64,7 @@ def do_register():
     }
 
     try:
-        resp = requests.post(f"{ACTIVE_URL}/register", json=body)
+        resp = requests.post(f"{BASE_URL}/register", json=body)
         resp_json = resp.json()
         print("REGISTER RESPONSE:", resp_json)
     except Exception as e:
@@ -132,6 +132,23 @@ def do_login(force_fail: bool):
         "commitmentHex": t_hex
     }
 
+    if DEBUG_MODE:
+        print("\n--- DEBUG BEFORE FINISH ---")
+        print(f"p: {p}")
+        print(f"q: {q}")
+        print(f"g: {g}")
+        print(f"x (secret): {('[HIDDEN]' if PRIVACY_MODE else x)}")
+        print(f"r (nonce): {r_val}")
+        print(f"t = g^r mod p: {t}  (hex: {t_hex})")
+        print(f"challenge c (hex): {c_hex}")
+        print(f"challenge c (int): {c}")
+        print(f"computed s = (r + c*x) mod q: {s} (hex: {s_hex})")
+
+        # También mostrar qué se enviará al backend:
+        print("\n--- DATA SENT TO BACKEND ---")
+        print(finish_body)
+        print("--- END DEBUG ---\n")
+
     try:
         finish_resp = requests.post(f"{ACTIVE_URL}/finish", json=finish_body)
         finish_resp.raise_for_status()
@@ -144,7 +161,7 @@ def do_login(force_fail: bool):
 
 
 def repl():
-    global ACTIVE_URL, PRIVACY_MODE
+    global ACTIVE_URL, PRIVACY_MODE, DEBUG_MODE
 
     print("ZKP Demo REPL")
     print("Commands:")
@@ -202,6 +219,22 @@ def repl():
             elif flag == "false":
                 ACTIVE_URL = BASE_URL
                 print("Using NORMAL URL:", ACTIVE_URL)
+            else:
+                print("Value must be true or false")
+
+        elif cmd.startswith("debug"):
+            parts = cmd.split()
+            if len(parts) != 2:
+                print("Usage: debug true|false")
+                continue
+
+            flag = parts[1].lower()
+            if flag == "true":
+                DEBUG_MODE = True
+                print("Debug mode enabled")
+            elif flag == "false":
+                DEBUG_MODE = False
+                print("Debug mode disabled")
             else:
                 print("Value must be true or false")
 
