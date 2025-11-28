@@ -26,8 +26,6 @@ class LoginController {
         return GenericResponse(true, "User registered")
     }
 
-    // -----------------------------
-    // PRODUCTIVO - devuelve SmallGroup
     @GetMapping("/vars")
     fun getVars(): Map<String, String> {
         return mapOf(
@@ -61,12 +59,24 @@ class LoginController {
 
         val s = BigInteger(req.responseHex, 16)
 
-        log.info("FINISH: user={} received_s={} tStored={} c={}", req.username, s.toString(16), tStored.toString(16), c.toString(16))
+        log.info(
+            "FINISH: user={} received_s={} (raw s)",
+            req.username, s.toString(16)
+        )
 
         val left = SmallGroup.generatorG.modPow(s, SmallGroup.primeModulusP)
-        val right = tStored.multiply(v.modPow(c, SmallGroup.primeModulusP)).mod(SmallGroup.primeModulusP)
+        log.info(
+            "FINISH: user={} left={} (left = g^s mod p)",
+            req.username, left.toString(16)
+        )
 
-        log.info("FINISH: user={} left={} right={}", req.username, left.toString(16), right.toString(16))
+        val right = tStored
+            .multiply(v.modPow(c, SmallGroup.primeModulusP))
+            .mod(SmallGroup.primeModulusP)
+        log.info(
+            "FINISH: user={} right={} (right = t * v^c mod p)",
+            req.username, right.toString(16)
+        )
 
         return if (left == right)
             GenericResponse(true, "Authentication success")
@@ -74,8 +84,7 @@ class LoginController {
             GenericResponse(false, "Authentication FAILED")
     }
 
-    // -----------------------------
-    // TEST (grupo chico)
+
     @Hidden
     @GetMapping("/test/vars")
     fun getMockedVars(): Map<String, String> {
@@ -112,12 +121,22 @@ class LoginController {
 
         val s = BigInteger(req.responseHex, 16)
 
-        log.info("TEST FINISH: user={} received_s={} tStored={} c={}", req.username, s.toString(16), tStored.toString(16), c.toString(16))
+        log.info("TEST FINISH: user={} received_s={} (raw s)",
+            req.username, s.toString(16))
 
         val left = MockedSmallGroup.generatorG.modPow(s, MockedSmallGroup.primeModulusP)
-        val right = tStored.multiply(v.modPow(c, MockedSmallGroup.primeModulusP)).mod(MockedSmallGroup.primeModulusP)
+        log.info(
+            "TEST FINISH: user={} left={} (left = g^s mod p)",
+            req.username, left.toString(16)
+        )
 
-        log.info("TEST FINISH: user={} left={} right={}", req.username, left.toString(16), right.toString(16))
+        val right = tStored
+            .multiply(v.modPow(c, MockedSmallGroup.primeModulusP))
+            .mod(MockedSmallGroup.primeModulusP)
+        log.info(
+            "TEST FINISH: user={} right={} (right = t * v^c mod p)",
+            req.username, right.toString(16)
+        )
 
         return if (left == right)
             GenericResponse(true, "Authentication success")
