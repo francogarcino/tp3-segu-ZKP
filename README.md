@@ -79,6 +79,7 @@ python src/resources/consumer.py
 | `login --f` | Intentar login con fallo forzado (para testing) |
 | `privacy true/false` | Activar/desactivar modo privacidad (ocultar secretos) |
 | `setTest true/false` | Cambiar entre endpoints de producción y test |
+| `debug true/false` | Activar/desactivar modo debug (muestra valores criptográficos durante login) |
 | `quit` | Salir del programa |
 
 ## Flujo de autenticación ZKP
