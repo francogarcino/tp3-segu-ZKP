@@ -11,10 +11,6 @@ PRIVACY_MODE = True
 DEBUG_MODE = False
 
 def read_secret(prompt: str) -> int:
-    """
-    Reads the secret x. If privacy mode is ON, hide the input.
-    If privacy OFF, show plaintext input.
-    """
     if PRIVACY_MODE:
         raw = getpass.getpass(prompt).strip()
     else:
